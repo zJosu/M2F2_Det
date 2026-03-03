@@ -170,13 +170,12 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
 def load_deepfake_model(model_path, model_base, model_name, load_8bit=False, load_4bit=False, device_map="auto", device="cuda", use_flash_attn=False, **kwargs):
     kwargs = {**kwargs}
 
-    # if device != "cuda":
-    #     kwargs['device_map'] = {"": device}
-
     if load_8bit:
         kwargs['load_in_8bit'] = True
+        kwargs['device_map'] = 'auto'   # required for bitsandbytes quantized models
     elif load_4bit:
         kwargs['load_in_4bit'] = True
+        kwargs['device_map'] = 'auto'   # required for bitsandbytes quantized models
         kwargs['quantization_config'] = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_compute_dtype=torch.float16,
@@ -185,6 +184,7 @@ def load_deepfake_model(model_path, model_base, model_name, load_8bit=False, loa
         )
     else:
         kwargs['torch_dtype'] = torch.float16
+        kwargs['device_map'] = {"": device}
 
     if use_flash_attn:
         kwargs['attn_implementation'] = 'flash_attention_2'
@@ -243,7 +243,7 @@ def load_deepfake_model(model_path, model_base, model_name, load_8bit=False, loa
             tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
             model = LlavaLlamaForCausalLMDeepfake.from_pretrained(
                 model_path,
-                low_cpu_mem_usage=False,
+                low_cpu_mem_usage='device_map' in kwargs,
                 **kwargs
             )
     else:

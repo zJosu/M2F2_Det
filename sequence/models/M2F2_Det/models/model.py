@@ -6,7 +6,12 @@ from transformers import AutoTokenizer, CLIPImageProcessor, CLIPTextModel
 from torch import nn
 from torch.nn import functional as F
 from typing import Optional
-from flash_attn.modules.mha import MHA
+
+try:
+    from flash_attn.modules.mha import MHA
+    HAS_FLASH_ATTN = True
+except ImportError:
+    HAS_FLASH_ATTN = False
 
 try:    ## ugly code for debugging and running~
     from .text_encoder import CLIPTextEncoder
@@ -100,12 +105,23 @@ class Permute(nn.Module):
 class TransformerEncoderBlock(nn.Module):
     def __init__(self, embed_dim, num_heads, ff_dim, dropout=0.1, causal=False):
         super().__init__()
-        self.attn = MHA(
-            embed_dim=embed_dim,
-            num_heads=num_heads,
-            dropout=dropout,
-            causal=causal
-        ).to(torch.bfloat16)
+        if HAS_FLASH_ATTN:
+            self.attn = MHA(
+                embed_dim=embed_dim,
+                num_heads=num_heads,
+                dropout=dropout,
+                causal=causal
+            ).to(torch.bfloat16)
+            self._use_flash = True
+        else:
+            # Fallback to standard PyTorch MultiheadAttention (CPU-compatible)
+            self.attn = nn.MultiheadAttention(
+                embed_dim=embed_dim,
+                num_heads=num_heads,
+                dropout=dropout,
+                batch_first=True,
+            )
+            self._use_flash = False
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(embed_dim)
         self.ffn = nn.Sequential(
@@ -117,8 +133,11 @@ class TransformerEncoderBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        orig_dtype = x.dtype
-        attn_out = self.attn(x.to(torch.bfloat16)).to(orig_dtype)
+        if self._use_flash:
+            orig_dtype = x.dtype
+            attn_out = self.attn(x.to(torch.bfloat16)).to(orig_dtype)
+        else:
+            attn_out, _ = self.attn(x, x, x)
         x = self.norm1(x + self.dropout(attn_out))
         x = self.norm2(x + self.dropout(self.ffn(x)))
         return x
