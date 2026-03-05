@@ -12,6 +12,7 @@
 \usepackage{xcolor}
 \usepackage{textcomp}
 \usepackage{booktabs}
+\usepackage{float}
 \usepackage{hyperref}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -28,7 +29,9 @@
 \author*[1]{\fnm{Josu} \sur{Zabala Muxika}}\email{josu.zabala@alumni.mondragon.edu}
 \author*[1]{\fnm{Javier} \sur{Solana Crespo}}\email{javier.solana@alumni.mondragon.edu}
 
-\affil*[1]{\orgdiv{Escuela Politécnica Superior}, \orgname{Mondragon Unibertsitatea}, \orgaddress{\city{Bilbao}, \country{España}}}
+\affil*[1]{\orgdiv{Escuela Politécnica Superior}, \orgname{Mondragon Unibertsitatea}, 
+
+\orgaddress{\city{Bilbao}, \country{España}}}
 
 \abstract{Se estudia el modelo M2F2-Det (\emph{Multi-Modal Interpretable Forged Face Detector}, CVPR 2025 Oral), que combina CLIP ViT-L/14, DenseNet-121 y LLaVA-7B para detectar y explicar deepfakes. Se implementa el pipeline en Google Colab, obteniendo AUC\,=\,100\,\% y accuracy\,=\,99,9\,\% sobre datos GAN. Se diagnostica el fallo del modelo ante imágenes de difusión y se propone un fine-tuning con 9\,000 rostros de Stable Diffusion. Tras el reentrenamiento, el modelo detecta correctamente imágenes generadas por difusión con 100\,\% de confianza.}
 
@@ -102,44 +105,53 @@ DenseNet-121~\cite{huang2017densenet} conecta cada capa con todas las siguientes
 \section{Arquitectura del M2F2-Det}\label{sec:architecture}
 %% ═══════════════════════════════════════════════════════════════════════
 
-M2F2-Det~\cite{guo2025m2f2det} opera en tres etapas:
+M2F2-Det~\cite{guo2025m2f2det} opera en tres etapas: Stage~1 realiza la clasificación binaria real/falso, Stage~2 alinea las representaciones del detector con el espacio del modelo de lenguaje, y Stage~3 genera una explicación textual de la decisión. La Figura~\ref{fig:flow} muestra el pipeline completo.
 
-\subsection{Stage 1: Detector binario}\label{subsec:stage1}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{flow.png}
+    \caption{Arquitectura de M2F2-Det~\cite{guo2025m2f2det}.}
+    \label{fig:flow}
+\end{figure}
 
-Combina tres ramas: (1)~\textbf{CLIP-Vision}: ViT-L/14@336 congelado produce un token CLS ($\mathbf{v}_{\text{cls}} \in \mathbb{R}^{1024}$) escalado por $\alpha_{\text{vis}}$; (2)~\textbf{CLIP-Text}: embeddings textuales de prompts de detección, que generan puntuaciones de similitud escaladas por $\alpha_{\text{txt}}$; (3)~\textbf{DenseNet-121}: red entrenable que extrae características de textura, fusionadas con CLIP mediante un \textbf{Bridge Adapter}. Las tres salidas se concatenan:
-\begin{equation}
-    \mathbf{f} = [\alpha_{\text{vis}} \cdot \mathbf{v}_{\text{cls}} \;\|\; \alpha_{\text{txt}} \cdot \mathbf{c}_{\text{bridge}} \;\|\; \text{proj}(\text{AvgPool}(\mathbf{d}))]
-\end{equation}
-produciendo $\mathbf{f} \in \mathbb{R}^{2176}$ que pasa por $\text{Linear}(2176, 2)$ para clasificación binaria.
+La imagen de entrada \textbf{I} se procesa en paralelo por el CLIP Image Encoder ($\mathcal{E}_I$), el Deepfake Encoder ($\mathcal{E}_D$) y el Bridge Adapter ($\mathcal{E}_A$). El CLIP Text Encoder ($\mathcal{E}_T$) codifica los UF-prompts de detección. Las representaciones se fusionan mediante similitud coseno ($\mathbf{M}_b$) y proyecciones MLP para producir, por un lado, la clasificación binaria \textit{Real or Fake} (vector $\mathbf{f}^0$) y, por otro, una explicación textual generada por el LLM $\mathcal{L}$ a partir de los tokens $\mathbf{H}_T$, $\mathbf{H}_V$ y $\mathbf{H}_F$. Los módulos marcados como \emph{Trainable} se actualizan durante el entrenamiento; los marcados como \emph{Frozen} permanecen fijos.
 
-\subsection{Stage 2 y 3: Alineación y explicación}\label{subsec:stage23}
-
-Stage~2 alinea los embeddings del detector con el espacio de LLaVA-v1.5-7B~\cite{liu2023llava} mediante un projector multimodal. Stage~3 utiliza el LLM completo para generar explicaciones textuales sobre la autenticidad de la imagen, describiendo indicios visuales como textura de piel, simetría y bordes.
-
-En nuestros experimentos, Stage~1 clasificó una imagen manipulada como \textbf{FAKE} (78,8\,\% confianza), mientras que Stage~3 la clasificó erróneamente como real con una explicación convincente pero incorrecta. Esta discrepancia ilustra el sesgo semántico de los LLMs.
+En Stage~1, el \textbf{CLIP-Vision Encoder} (ViT-L/14@336, congelado) extrae una representación semántica global, mientras que \textbf{DenseNet-121} (entrenable) detecta artefactos a nivel de textura mediante average pooling espacial sobre sus mapas de características. El \textbf{CLIP-Text Encoder} calcula la similitud coseno entre los parches visuales y prompts de detección como \textit{``a real face''} o \textit{``a forged face''}. Las tres representaciones se concatenan y pasan por una capa lineal que produce la clasificación final. En Stage~2 y~3, los embeddings de Stage~1 se alinean con el espacio de LLaVA-v1.5-7B~\cite{liu2023llava} para que el LLM pueda generar una explicación textual describiendo los indicios visuales que justifican la decisión.
 
 
 %% ═══════════════════════════════════════════════════════════════════════
 \section{Metodología Experimental}\label{sec:methodology}
 %% ═══════════════════════════════════════════════════════════════════════
 
-Todo el trabajo se realizó en notebooks de Google Colab (GPUs T4/A100) conectados desde VS Code.
+Todo el trabajo se realizó en notebooks \texttt{.ipynb} desde VS Code mediante la extensión de Google Colab para usar GPUs (T4/A100).
 
 \subsection{Pipeline de inferencia}\label{subsec:colab}
 
-El primer notebook (19 celdas) implementa el pipeline completo: setup del entorno con parches de compatibilidad (cuantización 4-bit, fallback de flash attention), descarga de pesos (${\sim}$16\,GB totales), y ejecución de Stage~1 (detección binaria) y Stage~3 (detección + explicación con LLaVA-7B en 4-bit).
+El punto de partida fue portar el código original de Guo et al.~\cite{guo2025m2f2det} a un notebook de Jupyter para poder ejecutarlo de forma interactiva. Esto requirió resolver múltiples incompatibilidades con versiones actuales de librerías: cuantización 4-bit, fallback de flash attention y descarga de pesos (${\sim}$16\,GB totales). Una vez funcionando, se ejecutó el pipeline completo de inferencia con Stage~1 (detección binaria) y Stage~3 (detección con explicación textual vía LLaVA-7B en 4-bit).
+
+Las primeras pruebas revelaron comportamientos preocupantes. El modelo clasificó como \textbf{falsa} una fotografía real de una persona con síndrome de Down, con una confianza elevada. Esto sugiere que el modelo no detecta deepfakes por artefactos técnicos de manipulación, sino que ha aprendido atajos estadísticos: si la cara presenta rasgos que se alejan del patrón facial más frecuente en su dataset de entrenamiento (FaceForensics++, compuesto principalmente por caras normativas), el modelo lo interpreta como señal de falsificación. Por el contrario, imágenes generadas por IA con rasgos genéricos y aspecto fotográfico convencional las clasificaba como \textbf{reales con 100\,\% de confianza}.
 
 \subsection{Entrenamiento y fine-tuning}\label{subsec:finetune}
 
-El segundo notebook (32 celdas) implementa:
+Para corregir este comportamiento se optó por entrenar el módulo Stage~1 con un dataset propio de imágenes reales (FFHQ) frente a imágenes generadas por GAN (StyleGAN). El fine-tuning parte de los pesos pretrained del modelo original y los ajusta con las nuevas imágenes, sin olvidar lo aprendido, lo que permite redirigir la atención del modelo hacia artefactos técnicos de la generación en lugar de rasgos faciales. Se utilizó un split 80/10/10, DenseNet-121 entrenable con CLIP congelado, Adam (lr$\,=\,10^{-4}$), CrossEntropyLoss y mixed precision durante 10 épocas.
 
-\textbf{Entrenamiento v1 (datos GAN):} Se utiliza el dataset de FFHQ (reales) + StyleGAN (falsos), equilibrado y dividido en train (80\,\%), validación (10\,\%) y test (10\,\%). Se entrena M2F2Det con DenseNet-121 (\texttt{hidden\_size=1024}), CLIP congelado, Adam (lr$\,=\,10^{-4}$), CrossEntropyLoss, batch 32, mixed precision, durante 10 épocas.
+Tras el reentrenamiento, el modelo v1 funcionaba correctamente sobre deepfakes GAN y ya no clasificaba erróneamente la imagen de la persona con síndrome de Down. La Figura~\ref{fig:exec20} muestra la predicción correcta del modelo v1 sobre esta imagen.
 
-\textbf{Evaluación:} Métricas de clasificación, matriz de confusión, curva ROC, mapas Grad-CAM~\cite{selvaraju2017gradcam} sobre \texttt{denseblock4} y predicciones individuales sobre imágenes propias.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{notebook_exec20.png}
+\caption{Predicción del modelo v1 sobre la fotografía real de una persona con síndrome de Down. Tras el fine-tuning con datos GAN, el modelo la clasifica correctamente como REAL.}\label{fig:exec20}
+\end{figure}
 
-\textbf{Diagnóstico:} Al evaluar imágenes generadas por difusión (Grok/Aurora de xAI), el modelo las clasifica como \textbf{reales al 100\,\%}. El análisis de señales internas reveló que tanto CLIP (P(Real)$\,=\,$99,9\,\%) como DenseNet (P(Real)$\,=\,$97,8\,\%) fallan, confirmando que los artefactos de difusión son cualitativamente diferentes.
+Sin embargo, al probarlo con imágenes generadas por Grok (modelos de difusión), volvía a fallar: las clasificaba como reales con máxima confianza. El análisis de las señales internas confirmó que tanto CLIP como DenseNet votaban ``real'' con probabilidades superiores al 97\,\%, lo que indica que los artefactos de los modelos de difusión son cualitativamente distintos a los de las GANs y el modelo simplemente no los había visto durante el entrenamiento.
 
-\textbf{Fine-tuning v2 (datos de difusión):} Se prepara el dataset \texttt{tobecwb/stable-diffusion-face-dataset}\footnote{\url{https://github.com/tobecwb/stable-diffusion-face-dataset}} con 9\,000 rostros (3\,000 de SD~1.5, 3\,000 de SD~2.1, 3\,000 de SDXL, bajo licencia CC-BY-4.0) más 4\,500 imágenes reales de FFHQ. División: 3\,600/450/450 por clase (train/val/test). Se reentrena durante 20 épocas con lr$\,=\,5\times10^{-5}$ y batch efectivo de 64.
+Para resolver esto se preparó un segundo dataset con 9\,000 rostros generados por Stable Diffusion 1.5, 2.1 y SDXL\footnote{\url{https://github.com/tobecwb/stable-diffusion-face-dataset}} y se realizó un segundo fine-tuning (v2) partiendo de los pesos del modelo v1, con lr$\,=\,5\times10^{-5}$ y 20 épocas. Al tratarse del mismo tipo de artefacto que producen Grok, DALL-E o Midjourney, el modelo generaliza bien a todos ellos.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{stabledifussion.jpg}
+\caption{Muestras del dataset \emph{stable-diffusion-face-dataset} utilizado para el fine-tuning v2. Rostros generados sintéticamente por modelos de difusión (SD~1.5/2.1/SDXL).}\label{fig:sd_samples}
+\end{figure}
 
 
 %% ═══════════════════════════════════════════════════════════════════════
@@ -193,6 +205,29 @@ Imagen difusión (Grok) & AI-Gen & \textbf{Real} & \textbf{100,0\,\%} \\
 \end{tabular*}
 \end{table}
 
+La Figura~\ref{fig:individual_preds} muestra las predicciones del modelo sobre cada imagen.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}[t]{0.24\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pred1.png}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.24\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pred2.png}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.24\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pred3.png}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.24\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pred4.png}
+\end{minipage}
+\caption{Predicciones del modelo v1 sobre imágenes de test.}\label{fig:individual_preds}
+\end{figure}
+
 El modelo detecta correctamente las imágenes GAN pero falla completamente ante imágenes de difusión, clasificándolas como reales con máxima confianza.
 
 \subsection{Fine-tuning v2: Datos de difusión}\label{subsec:results_v2}
@@ -214,9 +249,9 @@ Tras el reentrenamiento con datos de Stable Diffusion, el modelo v2 converge rá
 \end{tabular*}
 \end{table}
 
-Tras cargar los pesos del mejor checkpoint (época 2), se evaluó el modelo v2 sobre la imagen de prueba \texttt{fake\_carnet.jpg} (generada por IA). El resultado fue: \textbf{AI-GENERATED con 100,0\,\% de confianza}, resolviendo completamente el fallo de detección del modelo v1. La Figura~\ref{fig:v2pred} muestra esta predicción.
+Tras cargar los pesos del mejor checkpoint, se evaluó el modelo v2 sobre imágenes de prueba generados con IA. La imagen \texttt{fake\_carnet.jpg} que anteriormente fue clasificada como real por el modelo v1, ahora es correctamente identificada como AI-GENERATED con 100,0\,\% de confianza. La Figura~\ref{fig:v2pred} muestra esta predicción.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.35\textwidth]{notebook_exec32.png}
 \caption{Predicción del modelo v2 (fine-tuned con datos de difusión) sobre una imagen generada por IA. El modelo clasifica correctamente la imagen como AI-GENERATED con 100\,\% de confianza, resolviendo el fallo del modelo v1.}\label{fig:v2pred}
