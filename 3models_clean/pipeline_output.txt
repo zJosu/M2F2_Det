@@ -1,0 +1,162 @@
+﻿C:\Users\javie\AppData\Local\Programs\Python\Python311\Lib\site-packages\open_clip\factory.py:450: UserWarning: QuickGELU mismatch between final model config (quick_gelu=False) and pretrained tag 'openai' (quick_gelu=True).
+  warnings.warn(
+============================================================
+AIGI Detection - Full Experiment Pipeline
+System.Management.Automation.RemoteException
+Device: cpu | Smoke test: True
+============================================================
+
+----------------------------------------
+PHASE 2: LOADING MODELS
+----------------------------------------
+  [OK] CIFAKENet loaded
+  [OK] AIDE loaded
+  [OK] ZED Detector loaded
+
+----------------------------------------
+PHASE 3: EVALUATION
+----------------------------------------
+
+> Calibrating ZED threshold...
+  ZED threshold: 0.2101
+
+> Evaluating CIFAKE...
+Eval CIFAKE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00, 12.88it/s]
+  Acc: 0.5000 | F1: 0.6667 | AUC: 0.7336
+
+> Evaluating AIDE...
+System.Management.Automation.RemoteException
+Eval AIDE:   0%|          | 0/4 [00:00<?, ?it/s]
+Eval AIDE:  25%|##5       | 1/4 [00:02<00:08,  2.95s/it]
+Eval AIDE:  50%|#####     | 2/4 [00:05<00:05,  2.81s/it]
+Eval AIDE:  75%|#######5  | 3/4 [00:08<00:02,  2.78s/it]
+Eval AIDE: 100%|##########| 4/4 [00:08<00:00,  1.83s/it]
+Eval AIDE: 100%|##########| 4/4 [00:08<00:00,  2.19s/it]
+  Acc: 0.7200 | F1: 0.7083 | AUC: 0.7404
+
+> Evaluating ZED...
+  Acc: 0.5000 | F1: 0.0000 | AUC: 0.5356
+Results saved to results\comparison\results.csv
+
+----------------------------------------
+PHASE 4: ROBUSTNESS EVALUATION
+----------------------------------------
+
+> Robustness - CIFAKE...
+  Robustness: jpeg_q50...
+System.Management.Automation.RemoteException
+Eval CIFAKE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00,  9.30it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00,  9.30it/s]
+  Robustness: jpeg_q70...
+System.Management.Automation.RemoteException
+Eval CIFAKE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00,  8.34it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00,  8.34it/s]
+  Robustness: jpeg_q90...
+System.Management.Automation.RemoteException
+Eval CIFAKE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00,  8.90it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00,  8.90it/s]
+  Robustness: noise_std0.01...
+System.Management.Automation.RemoteException
+Eval CIFAKE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00, 12.69it/s]
+  Robustness: noise_std0.05...
+System.Management.Automation.RemoteException
+Eval CIFAKE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00, 13.24it/s]
+  Robustness: noise_std0.1...
+System.Management.Automation.RemoteException
+Eval CIFAKE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00, 12.94it/s]
+  Robustness: crop_80pct...
+System.Management.Automation.RemoteException
+Eval CIFAKE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00,  9.71it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00,  9.71it/s]
+  Robustness: crop_60pct...
+System.Management.Automation.RemoteException
+Eval CIFAKE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00,  9.60it/s]
+Eval CIFAKE: 100%|##########| 1/1 [00:00<00:00,  9.60it/s]
+
+> Robustness - AIDE...
+  Robustness: jpeg_q50...
+System.Management.Automation.RemoteException
+Eval AIDE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval AIDE: 100%|##########| 1/1 [00:21<00:00, 21.74s/it]
+Eval AIDE: 100%|##########| 1/1 [00:21<00:00, 21.77s/it]
+  Robustness: jpeg_q70...
+System.Management.Automation.RemoteException
+Eval AIDE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval AIDE: 100%|##########| 1/1 [00:19<00:00, 19.80s/it]
+Eval AIDE: 100%|##########| 1/1 [00:19<00:00, 19.83s/it]
+  Robustness: jpeg_q90...
+System.Management.Automation.RemoteException
+Eval AIDE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval AIDE: 100%|##########| 1/1 [00:18<00:00, 18.78s/it]
+Eval AIDE: 100%|##########| 1/1 [00:18<00:00, 18.82s/it]
+  Robustness: noise_std0.01...
+System.Management.Automation.RemoteException
+Eval AIDE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval AIDE: 100%|##########| 1/1 [00:17<00:00, 17.55s/it]
+Eval AIDE: 100%|##########| 1/1 [00:17<00:00, 17.59s/it]
+  Robustness: noise_std0.05...
+System.Management.Automation.RemoteException
+Eval AIDE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval AIDE: 100%|##########| 1/1 [00:15<00:00, 15.91s/it]
+Eval AIDE: 100%|##########| 1/1 [00:15<00:00, 15.93s/it]
+  Robustness: noise_std0.1...
+System.Management.Automation.RemoteException
+Eval AIDE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval AIDE: 100%|##########| 1/1 [00:16<00:00, 16.78s/it]
+Eval AIDE: 100%|##########| 1/1 [00:16<00:00, 16.81s/it]
+  Robustness: crop_80pct...
+System.Management.Automation.RemoteException
+Eval AIDE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval AIDE: 100%|##########| 1/1 [00:17<00:00, 17.85s/it]
+Eval AIDE: 100%|##########| 1/1 [00:17<00:00, 17.89s/it]
+  Robustness: crop_60pct...
+System.Management.Automation.RemoteException
+Eval AIDE:   0%|          | 0/1 [00:00<?, ?it/s]
+Eval AIDE: 100%|##########| 1/1 [00:17<00:00, 17.45s/it]
+Eval AIDE: 100%|##########| 1/1 [00:17<00:00, 17.49s/it]
+System.Management.Automation.RemoteException
+
+> Robustness - ZED...
+  Robustness: jpeg_q50...
+  Robustness: jpeg_q70...
+  Robustness: jpeg_q90...
+  Robustness: noise_std0.01...
+  Robustness: noise_std0.05...
+  Robustness: noise_std0.1...
+  Robustness: crop_80pct...
+  Robustness: crop_60pct...
+Results saved to results\comparison\robustness.csv
+
+----------------------------------------
+PHASE 5: EXPLAINABILITY ANALYSIS
+----------------------------------------
+
+> Generating CIFAKE Grad-CAM heatmaps...
+Generating Grad-CAM heatmaps:   0%|          | 0/3 [00:00<?, ?it/s]
+Generating Grad-CAM heatmaps:  33%|###3      | 1/3 [00:04<00:09,  4.88s/it]
+Generating Grad-CAM heatmaps:  67%|######6   | 2/3 [00:06<00:03,  3.08s/it]
+Generating Grad-CAM heatmaps: 100%|##########| 3/3 [00:07<00:00,  2.08s/it]
+Generating Grad-CAM heatmaps: 100%|##########| 3/3 [00:07<00:00,  2.53s/it]
+
+----------------------------------------
+PHASE 6: GENERATING COMPARISON PLOTS
+----------------------------------------
+Saved metric comparison to results\comparison\metric_comparison.png
+Saved robustness heatmap to results\comparison\robustness_accuracy.png
+Saved robustness heatmap to results\comparison\robustness_auc.png
+
+All comparison plots saved to results\comparison
+
+============================================================
+PIPELINE COMPLETE - 177.9s total
+Results: results
+============================================================

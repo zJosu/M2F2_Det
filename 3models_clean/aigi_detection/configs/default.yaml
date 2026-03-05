@@ -1,0 +1,65 @@
+# ============================================================
+# AIGI Detection — Global Configuration
+# ============================================================
+
+# ---- Global ----
+seed: 42
+device: "auto"                    # "auto" | "cuda" | "cpu"
+data_root: "data"
+results_dir: "results"
+num_workers: 0
+
+# ---- CIFAKE dataset ----
+cifake:
+  data_dir: "data/CIFAKE"
+  image_size: 32
+  batch_size: 128
+  # Training
+  epochs: 30
+  lr: 0.001
+  weight_decay: 0.0001
+  scheduler: "cosine"             # "cosine" | "step"
+  # Grad-CAM
+  gradcam_layer: "features.6"    # last conv block
+  gradcam_n_samples: 50
+
+# ---- AIDE model ----
+aide:
+  data_dir: "data/CIFAKE"           # reuse CIFAKE data for comparison
+  image_size: 224                   # CLIP expects 224×224
+  batch_size: 32
+  # Architecture
+  patch_size: 8                     # grid patch size for PFE
+  expert_dim: 256
+  clip_model: "ViT-B-32"
+  clip_pretrained: "openai"
+  # Training
+  epochs: 20
+  lr: 0.0003
+  weight_decay: 0.0001
+  scheduler: "cosine"
+
+# ---- ZED detector ----
+zed:
+  image_size: 32                    # match CIFAKE resolution
+  batch_size: 16
+  # PixelCNN codec
+  n_channels: 3
+  n_layers: 7
+  n_filters: 64
+  # Detection
+  calibration_n: 200               # real images for threshold calibration
+
+# ---- Evaluation ----
+evaluation:
+  metrics: ["accuracy", "f1", "auc"]
+  robustness:
+    jpeg_qualities: [50, 70, 90]
+    gaussian_noise_stds: [0.01, 0.05, 0.1]
+    crop_scales: [0.8, 0.6]
+
+# ---- Explainability ----
+explainability:
+  n_samples: 30                    # images for explanation analysis
+  perturbation_n: 10               # augmentations for stability
+  overlap_threshold: 0.5

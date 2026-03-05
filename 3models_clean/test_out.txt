@@ -1,0 +1,35 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\javie\AppData\Local\Programs\Python\Python311\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\javie\Desktop\ml2\aigi_detection
+configfile: pyproject.toml
+plugins: anyio-4.11.0
+collecting ... collected 25 items
+
+tests/test_metrics.py::TestMetrics::test_perfect_accuracy PASSED         [  4%]
+tests/test_metrics.py::TestMetrics::test_zero_accuracy PASSED            [  8%]
+tests/test_metrics.py::TestMetrics::test_perfect_f1 PASSED               [ 12%]
+tests/test_metrics.py::TestMetrics::test_perfect_auc PASSED              [ 16%]
+tests/test_metrics.py::TestMetrics::test_random_auc PASSED               [ 20%]
+tests/test_metrics.py::TestMetrics::test_evaluate_predictions PASSED     [ 24%]
+tests/test_metrics.py::TestMetrics::test_single_class_auc PASSED         [ 28%]
+tests/test_metrics.py::TestMetrics::test_optimal_threshold PASSED        [ 32%]
+tests/test_models.py::TestCIFAKENet::test_forward_shape PASSED           [ 36%]
+tests/test_models.py::TestCIFAKENet::test_gradcam_layer PASSED           [ 40%]
+tests/test_models.py::TestCIFAKENet::test_sigmoid_range PASSED           [ 44%]
+tests/test_models.py::TestPatchArtifactExpert::test_forward_shape PASSED [ 48%]
+tests/test_models.py::TestPatchArtifactExpert::test_small_image PASSED   [ 52%]
+tests/test_models.py::TestPixelCNN::test_forward_shape PASSED            [ 56%]
+tests/test_models.py::TestPixelCNN::test_nll_shape PASSED                [ 60%]
+tests/test_models.py::TestPixelCNN::test_entropy_shape PASSED            [ 64%]
+tests/test_models.py::TestPixelCNN::test_nll_and_entropy_joint PASSED    [ 68%]
+tests/test_models.py::TestMaskedConv::test_mask_type_a PASSED            [ 72%]
+tests/test_models.py::TestMaskedConv::test_mask_type_b PASSED            [ 76%]
+tests/test_transforms.py::TestJPEGCompress::test_returns_pil PASSED      [ 80%]
+tests/test_transforms.py::TestJPEGCompress::test_preserves_size PASSED   [ 84%]
+tests/test_transforms.py::TestGaussianNoise::test_output_range PASSED    [ 88%]
+tests/test_transforms.py::TestGaussianNoise::test_modifies_input PASSED  [ 92%]
+tests/test_transforms.py::TestRandomCropResize::test_output_size PASSED  [ 96%]
+tests/test_transforms.py::TestRobustnessTransforms::test_default_transforms PASSED [100%]
+
+============================= 25 passed in 4.73s ==============================

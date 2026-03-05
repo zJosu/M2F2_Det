@@ -1,0 +1,27 @@
+[project]
+name = "aigi-detection"
+version = "0.1.0"
+description = "AI-Generated Image Detection: CIFAKE, AIDE, ZED"
+requires-python = ">=3.9"
+dependencies = [
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "numpy>=1.24.0",
+    "scikit-learn>=1.2.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "pandas>=2.0.0",
+    "Pillow>=9.5.0",
+    "pyyaml>=6.0",
+    "tensorboard>=2.13.0",
+    "tqdm>=4.65.0",
+    "open-clip-torch>=2.20.0",
+    "pytorch-grad-cam>=1.4.8",
+    "scipy>=1.10.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.3.0", "black>=23.3.0", "isort>=5.12.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

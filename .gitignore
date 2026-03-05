@@ -1,6 +1,9 @@
 playground/data/deepfake
 playground/data/imdl
 wandb/
+
+# LaTeX report (local only, not pushed to GitHub)
+report/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 **/__pycache__/
