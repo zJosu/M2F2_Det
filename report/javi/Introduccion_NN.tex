@@ -1,0 +1,332 @@
+\documentclass[12pt,a4paper,twoside]{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{fancyhdr}
+\usepackage{indentfirst}
+\usepackage{amsmath}   % Entornos matemáticos avanzados
+\usepackage{amsfonts} % Conjuntos como \mathbb{R}
+\usepackage{amssymb}  % Símbolos extra
+\usepackage{float}
+\usepackage{listings}
+\usepackage{subcaption}
+\usepackage[spanish]{babel}
+\usepackage{dirtree}
+\usepackage{etoolbox}
+\usepackage{pdfpages}
+\usepackage[hidelinks]{hyperref}
+\usepackage[babel]{csquotes} % muy recomendado con biblatex
+\usepackage[  backend=biber,
+  style=numeric,
+  sorting=nyt]{biblatex}
+\usepackage{makecell}
+\DeclareLanguageMapping{spanish}{spanish-apa}
+\addbibresource{bibliografia.bib}
+
+\usepackage[left=2.5cm, right=2.5cm, top=3cm, bottom=3cm]{geometry}
+% ------------------------------
+% Estilo de títulos (bloques visuales)
+% ------------------------------
+\usepackage{titlesec}
+\titleformat{\chapter}[hang]
+  {\Huge\bfseries}{\thechapter}{2em}{}[\titlerule] % Línea bajo capítulos
+\titleformat{\section}[hang]
+  {\Large\bfseries}{\thesection}{1em}{}[\titlerule] % Línea bajo secciones
+\titleformat{\subsection}[hang]
+  {\large\bfseries}{\thesubsection}{1em}{} % sin línea
+\titleformat{\subsubsection}[hang]
+  {\normalsize\bfseries}{\thesubsubsection}{1em}{} % sin línea
+
+% ------------------------------
+% Encabezados y pies
+% ------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{} % limpia
+\fancyhead[L]{\leftmark} % Nombre de capítulo/sección a la izquierda
+\fancyhead[R]{\thepage}  % Número de página a la derecha
+
+\title{Deep Learning\\ Sistema de Mantenimiento Predictivo}
+\author{Libe Belasko, Javier Solana, Miguel Iriso}
+\date{November 2025}
+
+\begin{document}
+\includepdf[
+  pages={1-2},
+  fitpaper=true
+]{portada.pdf}
+% ===== PÁGINAS PRELIMINARES (sin números o con números romanos) =====
+%\mbox{}
+\newpage
+\pagestyle{empty}
+\section*{Resumen}
+
+\newpage
+\pagenumbering{roman}
+\pagestyle{plain}
+%Índice
+\tableofcontents
+\newpage
+\listoffigures  % Índice de figuras
+\newpage
+\listoftables   % Índice de tablas
+\newpage
+%Primera seccion
+\pagenumbering{arabic} % Números arábigos
+% Configurar el estilo de numeración
+\pagestyle{plain}
+
+\pretocmd{\section}{\cleardoublepage}{}{}
+%\pagestyle{fancy}
+%\fancyhf{} % Limpiar encabezados y pies
+%\fancyfoot[C]{\thepage} % Número de página centrado
+
+\section{Introducción}
+El rápido avance de la inteligencia artificial generativa ha transformado profundamente la manera
+en que se crea contenido digital. Herramientas que hace apenas unos años estaban reservadas a
+estudios de producción especializados son hoy accesibles de forma gratuita en internet, permitiendo
+a cualquier persona generar imágenes fotorrealistas prácticamente indistinguibles de una fotografía
+real. Este fenómeno ha dado lugar a una categoría creciente de medios sintéticos comúnmente
+denominados imágenes generadas por IA, producidas mediante arquitecturas como las redes
+generativas adversariales (GANs), los modelos de difusión o los transformadores visuales de gran
+escala.
+
+Si bien estas tecnologías tienen un valor creativo y práctico innegable, su uso indebido plantea
+riesgos serios que van mucho más allá del ámbito del entretenimiento. La falsificación de documentos
+de identidad, la creación de retratos faciales fraudulentos para ataques de ingeniería social, o
+la fabricación de pruebas visuales en contextos legales e institucionales son solo algunos de los
+escenarios en los que la incapacidad de distinguir lo real de lo sintético puede acarrear
+consecuencias directas tanto para personas como para organizaciones. El problema se agrava por la
+velocidad a la que mejora la calidad de generación: modelos publicados con apenas meses de
+diferencia pueden dejar obsoletos los sistemas de detección anteriores.
+
+Los métodos de detección más avanzados han demostrado una precisión prometedora en entornos
+controlados; sin embargo, en su mayoría funcionan como clasificadores opacos. Un modelo que
+devuelve una puntuación de confianza sin ninguna justificación adicional ofrece una utilidad limitada en situaciones de alto riesgo. Un
+analista forense, un periodista o un profesional del ámbito legal no puede actuar únicamente sobre
+un número: necesita entender \textit{por qué} el sistema ha llegado a esa conclusión. ¿Qué regiones
+de la imagen han activado la decisión? ¿Se trata de una textura anómala en la piel, una
+inconsistencia en la iluminación o artefactos en los bordes del cabello? Sin esta información, el
+sistema de detección no puede ser auditado, cuestionado ni, en última instancia, confiable.
+
+Esta brecha entre rendimiento predictivo e interpretabilidad es la que motiva el enfoque central
+de este trabajo. En lugar de limitarnos a determinar \textit{si} una imagen ha sido generada por
+IA, nuestro objetivo es estudiar aproximaciones que también sean capaces de explicar \textit{dónde}
+y, en cierta medida, \textit{por qué}. Mediante la incorporación de técnicas de explicabilidad
+---como mapas de atribución basados en gradientes o métodos de oclusión--- sobre modelos de
+detección existentes, buscamos producir resultados que sean a la vez precisos e interpretables.
+Este enfoque se enmarca dentro del movimiento hacia una IA confiable (\textit{Trustworthy AI}),
+que reconoce la transparencia y la supervisión humana como propiedades esenciales de cualquier
+sistema desplegado en contextos reales sensibles.
+
+El resto del artículo presenta una revisión de la literatura relevante, una comparativa de los
+enfoques de detección y explicabilidad seleccionados, y una evaluación empírica diseñada para
+medir tanto la precisión de los modelos como la calidad de las explicaciones generadas.
+
+
+\section{Estado del Arte}
+
+\subsection{Detección de imágenes generadas por IA}
+
+La detección de imágenes sintéticas ha evolucionado de forma acelerada entre 2022 y
+2025, pasando de clasificadores superficiales basados en características artesanales
+a arquitecturas profundas que explotan representaciones de modelos fundacionales. A
+grandes rasgos, los enfoques actuales se agrupan en tres líneas: detectores
+supervisados con CNN o ViT, métodos basados en señales de reconstrucción o
+gradiente, y detectores que aprovechan espacios de características de modelos
+preentrenados sin necesidad de entrenamiento adicional.
+
+\textbf{Detectores supervisados basados en CNN.} Los backbones convolucionales
+(EfficientNet, Xception, ConvNeXt) preentrenados en ImageNet y ajustados sobre
+datos reales frente a sintéticos constituyen la línea de trabajo más madura,
+alcanzando AUC $\geq 0.99$ en benchmarks de distribución cerrada como
+FaceForensics++. Sin embargo, su rendimiento cae de forma notable ante generadores
+no vistos durante el entrenamiento. Wang et al.~\cite{wang2022dual} demuestran que
+añadir una rama en el dominio frecuencial (FFT, filtros SRM) mejora la robustez
+frente a compresión y redimensionado, capturando los artefactos periódicos que
+dejan los pasos de \textit{up-sampling} de las GAN.
+
+\textbf{Representaciones de gradiente y error de reconstrucción.} Tan et
+al.~\cite{tan2023lgrad} proponen \textbf{LGrad} (CVPR 2023), uno de los trabajos
+más citados del período con más de 190 referencias en Semantic Scholar. En lugar de
+operar directamente sobre píxeles RGB, calculan mapas de gradiente de la imagen
+respecto a una CNN preentrenada; estos gradientes capturan artefactos de generación
+universales que se transfieren entre arquitecturas GAN distintas y conjuntos de
+datos diferentes. En una dirección complementaria, Wang et al.~\cite{wang2023dire}
+introducen \textbf{DIRE} (ICCV 2023), un detector específico para imágenes de
+difusión. La intuición es que las imágenes generadas por un modelo de difusión se
+reconstruyen con bajo error cuando se pasan de nuevo por ese mismo modelo, mientras
+que las imágenes reales presentan un error de reconstrucción alto. DIRE ofrece buena
+generalización a modelos de difusión no vistos y viene acompañado del benchmark
+\textit{DiffusionForensics}.
+
+\textbf{Detectores basados en modelos preentrenados.} Ojha et al.~\cite{ojha2023univfd}
+presentan \textbf{UnivFD} (CVPR 2023), argumentando que los clasificadores
+supervisados estándar sobreajustan a los generadores vistos durante el
+entrenamiento. Su propuesta es realizar la clasificación real-vs-falso mediante
+vecinos más cercanos en el espacio de características de CLIP, sin ajustar el
+backbone. Este planteamiento mejora la precisión media en aproximadamente 26 puntos
+porcentuales frente a detectores supervisados cuando se evalúa sobre 19 modelos
+generativos no vistos, incluyendo GAN y difusión. Ampliando esta idea, Sha et
+al.~\cite{sha2023raising} muestran que un ViT-B/16 de CLIP con una cabeza lineal
+ligera alcanza AUC $\geq 0.99$ en benchmarks GAN estándar y mantiene entre 0.92 y
+0.96 ante generadores desconocidos.
+
+Más recientemente, \textbf{RIGID}~\cite{rigid2024} propone un detector sin
+entrenamiento (\textit{training-free}) basado en la observación de que las imágenes
+reales son más robustas que las sintéticas ante pequeñas perturbaciones en el
+espacio de representaciones de modelos fundacionales como \textbf{DINOv2} o CLIP.
+La caída de similitud entre el embedding original y el perturbado actúa como señal
+de detección, sin requerir datos de entrenamiento adicionales ni ajuste fino. RIGID
+demuestra resultados competitivos en GenImage y otros benchmarks modernos,
+convirtiendo a DINOv2 en una pieza relevante del ecosistema de detección actual.
+
+\textbf{Benchmarks de referencia.} Zhu et al.~\cite{zhu2023genimage} introducen
+\textbf{GenImage} (NeurIPS 2023), un benchmark de más de un millón de pares
+real-sintético producidos por más de siete familias generativas (StyleGAN,
+Stable Diffusion, DALL-E, entre otras). Define dos tareas principales: clasificación
+cruzada entre generadores y clasificación con degradaciones (baja resolución,
+compresión). Se ha convertido en el benchmark de referencia para evaluar
+generalización, y sus resultados muestran que incluso los mejores modelos actuales
+caen por debajo de AUC 0.90 cuando el generador de test es completamente desconocido.
+
+\subsection{Explicabilidad aplicada a la detección}
+
+Dado que los detectores de alto rendimiento operan en gran medida como cajas negras,
+ha surgido una línea específica que aplica técnicas de IA explicable (XAI) para
+justificar sus decisiones, especialmente relevante en contextos forenses y legales.
+
+Los \textbf{métodos basados en gradiente}, y en particular Grad-CAM y sus variantes,
+son los más utilizados por su bajo coste y fácil integración en CNN. En detección de
+deepfakes se aplican sobre la última capa convolucional para resaltar las regiones
+faciales que más han influido en la predicción. Silva et al.~\cite{silva2022}
+proponen un ensemble jerárquico donde los mapas de atención localizan artefactos en
+zonas de boca, ojos y bordes faciales en FaceForensics++. Sistemas como el de Arjun
+et al.~\cite{arjun2023xception} combinan XceptionNet con Grad-CAM y MediaPipe Face
+Mesh para traducir mapas de calor en descriptores anatómicos de alto nivel,
+facilitando la interpretación por parte de analistas humanos. Trabajos más recientes
+proponen ensembles de MobileNetV2 y EfficientNetV2B0 donde Grad-CAM actúa
+simultáneamente como mecanismo de interpretabilidad y herramienta de
+depuración~\cite{gradcam_mobile}.
+
+Los \textbf{métodos basados en perturbaciones} (LIME, SHAP, RISE) ofrecen
+estimaciones de relevancia local modificando partes de la entrada y observando el
+impacto en la predicción. Aunque más costosos que Grad-CAM, permiten validar la
+fidelidad causal de las explicaciones. El marco de evaluación cuantitativa de
+\citeauthor{quant2024}~\cite{quant2024} compara cinco métodos aplicados a un
+detector entrenado en FaceForensics++, concluyendo que LIME obtiene mayor fidelidad
+causal medida por las métricas de \textit{insertion/deletion}, mientras que los
+métodos gradiente producen visualizaciones perceptualmente más intuitivas. El
+sistema \textbf{DeepExplain}~\cite{deepexplain2024} combina ambas familias en un
+pipeline unificado: las saliencias de Grad-CAM alimentan el cálculo de valores SHAP
+a nivel de región, reportando además mejoras en AUROC respecto a baselines sin
+módulo explicativo.
+
+Un resultado transversal de esta literatura es que las métricas cualitativas y
+cuantitativas de las explicaciones no siempre están alineadas: mapas de calor
+visualmente convincentes pueden no reflejar fielmente el proceso interno de
+decisión, lo que resulta crítico en contextos forenses donde las explicaciones
+pueden tener implicaciones legales~\cite{gradcam_medical}. Esto motiva que los
+trabajos más recientes apunten hacia sistemas que validen las explicaciones mediante
+métricas de fidelidad y localización, y que evalúen explícitamente su robustez
+adversarial.
+
+\section{Metodología}
+
+\subsection{Visión general}
+
+El objetivo de este trabajo es comparar tres aproximaciones distintas para la
+detección de imágenes generadas por IA, evaluando no solo su rendimiento predictivo
+sino también la calidad e interpretabilidad de las explicaciones que producen. Para
+ello se sigue un protocolo común: los tres modelos se evalúan sobre el mismo
+conjunto de test, se aplica una técnica de explicabilidad sobre cada uno, y los
+resultados se comparan mediante métricas cuantitativas y análisis visual cualitativo.
+
+\subsection{Dataset}
+
+Se utiliza \textbf{CIFAKE}~\cite{cifake}, un conjunto de datos público disponible en
+Kaggle que contiene 60.000 imágenes divididas en dos clases: imágenes reales
+procedentes de CIFAR-10 e imágenes sintéticas generadas con Stable Diffusion
+condicionadas a las mismas categorías semánticas. La distribución es equilibrada
+(50\% real, 50\% sintético), lo que evita sesgos de clase en las métricas de
+evaluación.
+
+Para mantener los experimentos dentro de los límites de memoria y tiempo de
+ejecución de Google Colab, se trabaja con un subconjunto de \textbf{10.000 imágenes}
+(8.000 para entrenamiento y validación, 2.000 para test). El conjunto de test es
+idéntico para los tres modelos, garantizando comparabilidad directa de los
+resultados. Todas las imágenes se redimensionan a $224 \times 224$ píxeles y se
+normalizan con la media y desviación estándar de ImageNet.
+
+\subsection{Modelos de detección}
+
+\subsubsection{EfficientNet-B4 supervisado}
+
+Como baseline convolucional se emplea \textbf{EfficientNet-B4}~\cite{tan2019efficientnet},
+preentrenado en ImageNet. Se sustituye la cabeza de clasificación original por una
+capa lineal binaria y se realiza \textit{fine-tuning} completo durante 10 épocas con
+optimizador Adam (lr $= 1\text{e-}4$, weight decay $= 1\text{e-}5$) y
+\textit{early stopping} sobre la pérdida de validación. Este modelo representa la
+familia de detectores supervisados que domina los benchmarks de distribución cerrada.
+
+\subsubsection{UnivFD — clasificación mediante CLIP}
+
+El segundo modelo sigue el planteamiento de Ojha et al.~\cite{ojha2023univfd}: se
+congela el encoder visual \textbf{ViT-B/16 de CLIP} y se entrena únicamente una
+cabeza lineal binaria sobre sus representaciones. El backbone no se ajusta, lo que
+evita el sobreajuste al generador específico presente en el dataset de entrenamiento
+y favorece la generalización. El entrenamiento de la cabeza lineal converge en menos
+de 5 épocas con el mismo optimizador y tasa de aprendizaje que EfficientNet.
+
+\subsubsection{RIGID — detección sin entrenamiento con DINOv2}
+
+El tercer modelo implementa el enfoque de \textbf{RIGID}~\cite{rigid2024}: se
+emplea el encoder \textbf{DINOv2 ViT-B/14}~\cite{oquab2023dinov2}, entrenado de
+forma autosupervisada, sin ningún ajuste fino adicional. La señal de detección se
+construye perturbando los embeddings con ruido gaussiano de pequeña magnitud
+($\sigma = 0.01$) y midiendo la caída en similitud coseno entre el embedding
+original y el perturbado; las imágenes sintéticas presentan una caída
+significativamente mayor que las reales. La clasificación final se realiza mediante
+un umbral sobre esta diferencia, optimizado sobre el conjunto de validación. Este
+modelo no requiere ninguna fase de entrenamiento.
+
+\subsection{Métodos de explicabilidad}
+
+\subsubsection{Grad-CAM sobre EfficientNet}
+
+Se aplica \textbf{Grad-CAM}~\cite{selvaraju2017gradcam} sobre la última capa
+convolucional de EfficientNet-B4, generando un mapa de calor que resalta las
+regiones de la imagen cuya activación ha contribuido más a la predicción de clase
+sintética. Los mapas se superponen sobre la imagen original con una escala de color
+continua para facilitar la inspección visual.
+
+\subsubsection{Mapas de atención de DINOv2}
+
+Una ventaja intrínseca de los modelos entrenados con DINO es que sus cabezas de
+\textit{self-attention} producen mapas de atención interpretables sin necesidad de
+post-proceso adicional~\cite{caron2021dino}. Se extraen los mapas de atención del
+último bloque transformer de DINOv2 y se promedian entre cabezas para obtener una
+sola visualización por imagen.
+
+\subsubsection{LIME sobre UnivFD}
+
+Para el modelo CLIP-based se aplica \textbf{LIME}~\cite{ribeiro2016lime}
+(\textit{Local Interpretable Model-agnostic Explanations}), que segmenta la imagen
+en super-píxeles mediante SLIC y estima la contribución de cada región a la
+predicción entrenando un modelo lineal local sobre perturbaciones de la entrada. Se
+generan 1.000 muestras por imagen y se retienen los 10 super-píxeles más relevantes.
+
+\subsection{Métricas de evaluación}
+
+\textbf{Rendimiento predictivo.} Se reportan \textit{accuracy}, AUC-ROC y F1-score
+para los tres modelos sobre el conjunto de test común.
+
+\textbf{Calidad de las explicaciones.} Se evalúa mediante la métrica de
+\textit{insertion/deletion}~\cite{petsiuk2018rise}: se insertan progresivamente las
+regiones más relevantes según cada explicador y se mide cómo evoluciona la confianza
+del modelo; una subida rápida indica explicaciones de alta fidelidad. Adicionalmente,
+se realiza un análisis visual cualitativo sobre una muestra de 20 imágenes
+seleccionadas de forma estratificada.
+
+
+
+\end{document}
+
